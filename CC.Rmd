@@ -1,0 +1,242 @@
+---
+title: "Bayesian Crater-Counting Analysis"
+subtitle: "Accounting for Observation Error"
+author: "Xiangmei Zhang"
+date: "`r Sys.Date()`"
+output:
+  xaringan::moon_reader:
+    yolo: false
+    css: [my.css, my-fonts.css]
+    lib_dir: libs
+    nature:
+      highlightStyle: github
+      highlightLines: true
+      countIncrementalSlides: false
+      
+     
+---
+
+```{r setup, include=FALSE}
+options(htmltools.dir.version = FALSE)
+```
+
+background-image: url(Picture1.jpg)
+background-size: cover
+class: bottom, inverse
+# LROC NAC Image
+Lunar Reconnaissance Orbiter Camera Narrow-Angle Camera (LROC NAC) M146959973L 
+
+
+???
+This is a picture of moon surface, shot by Lunar Recon-nai-ssance Orbiter Camera with Narrow-Angel Camera. It is full of craters.
+
+The number of craters on the surface or the crater intensity is meaningful for astrophysicists, they determine the relative ages of two celestial surfaces by comparing the crater numbers on their surfaces.
+
+
+---
+background-image: url(Picture2.png)
+background-size: 170px
+background-position: 80% 18%
+
+# Intro
+Crater Counting<sup>[1-3]</sup>
+- Determine celestial surface relative ages 
+- Rely on analysts to mark craters 
+
+???
+Most of crater counting studies have relied on analysts to mark craters, like this picture, to record their locations and sizes on high-resolution photographs of the surfaces.  
+
+--
+
+Observation Error
+- Individual differences between analysts 
+- Inevitable observation error
+
+???
+In this case, Number of craters can vary from person to person, because of the individual biases about how they count the craters and also because of the differences of software and methods.
+
+And even for a single analyst, there will be in’evitable observation error, such as missing a real crater or adding a fake one.
+--
+
+Aim
+- Estimate the real crater intensity/number on the area accounting for observation error
+
+.footnote[
+[1] Robbins S J, et al. The variability of crater identification among expert and community crater analysts. Icarus, 2014
+
+[2] Kirchoff M, et al. Examining lunar impactor population and evolution: Additional results from crater distributions on diverse terrains. EPSC-DPS Joint Meeting, 2011 
+
+[3] Kneissl T, et al. Map-projection-independent crater size- frequency determination in GIS environments New software tool for ArcGIS. Planetary and Space Science, 2011
+]
+
+???
+The goal in this study is to come up with a method to analyze a real crater dataset mapped by several analysts and estimate the real crater intensity accounting for the observation error
+
+---
+# Data
+
+25,934 crater observations by 13 analysts on a LROC image of the moon surface
+
+```{r eval=require('DT'), tidy=FALSE,echo=FALSE, message=FALSE}
+library(tidyverse)
+da <- read.table("Crater_Meas_data.txt", header = T) 
+dat = da %>% group_by(Observer) %>% slice(1:3)
+DT::datatable(
+  dat,
+  fillContainer = FALSE, options = list(pageLength = 8)
+)
+```
+???
+The real crater dataset that motivates our work contains about 26, 000 crater observations marked by 13 analysts in the same region of a Lunar Recon-nai-ssance Orbiter Camera (LROC) image.
+
+Each observation consists of the crater location, its diameter, the analyst name, and the camera type employed (WAC or NAC)
+
+---
+# Plot
+```{r out.width='100%', fig.height=6, eval=require('leaflet'), echo=FALSE}
+library(leaflet)
+rect = da[ da$X>700 & da$X<2300 & da$Y> -1800 & da$Y< -700, ]
+leaflet(rect) %>%
+  addRectangles(
+    lng1=0, lat1=-5000/111000,
+    lng2=3000/111000, lat2=500/111000,
+    fillColor = "white", fillOpacity = 1,stroke = F
+  ) %>% addCircles(~X/111000, ~Y/111000, ~Diameter/2, color="#03F", weight=1.5, fill = F) %>%
+  setView(1500/111000,-1250/111000,zoom = 17)
+```
+???
+This picture is a part of the original dataset, each circle represents a different observation identified by one analyst.
+
+It shows us the inconsistency and overlapping among circles for each crater 
+So, before the Bayesian analysis, I use a pretreatment process to remove those small variations from different observers for the same crater. 
+
+---
+background-image: url(Picture3.png)
+background-size: 850px
+background-position: 20% 78%
+
+# Pretreatment
+Hierarchical Clustering
+
+- Dissimilarity  $$D=\dfrac{\sqrt{(x_1-x_2)^2+(y_1-y_2)^2+\color{red}\alpha(d_1-d_2)^2}}{\color{red}\min(d_1,d_2)}$$
+
+- cut the cluster tree at an appropriate height<sup>*</sup> and average within cluster
+
+
+.footnote[
+[*] basic rule: the number of leaves in each branch below the cut $\le$ the total number of analysts
+]
+
+???
+Alpha is a tuning parameter to adjust scaling between location and diameter differences. 
+
+Taking the min of d1 and d2 is to magnify the difference between two circles with different sizes.
+
+---
+# Plot after pretreatment
+```{r out.width='100%', fig.height=6, eval=require('leaflet'), echo=FALSE}
+library(tidyverse)
+library(leaflet)
+load('nac_pretreated.RData')
+nacp = nac_pretreat%>% filter(X>1000 ,X<2000 ,Y> -1500 ,Y< -1000)
+rect2 = da %>% filter(X>1000 ,X<2000 ,Y> -1500 ,Y< -1000 ,Image=='NAC')
+leaflet() %>%
+  addRectangles(
+    lng1=0, lat1=-5000/111000,
+    lng2=3000/111000, lat2=500/111000,
+    fillColor = "white", fillOpacity = 1,stroke = F
+  ) %>% addCircles(data = rect2, ~X/111000, ~Y/111000, ~Diameter/2, weight=.5, fill = F) %>%
+  addCircles(data = nacp, ~X/111000, ~Y/111000, ~Diameter/2, color="#F00", weight=1.5, fill = F) %>%
+  setView(1500/111000,-1250/111000,zoom = 17)
+```
+---
+#  Model
+
+OB: observer behavior;  CC: crater characteristic
+.toleft[
+.small[
+$$\text{data} \xrightarrow{\text{pretreatment}}\begin{cases}   \text{summary number}   \begin{cases}  N_0\text{ missed by all observers}\\[2px]N_{2+}\text{ seen by 2+ observers}\\[2px] S_j=N_j(\text{real})+F_j(\text{errant}) \text{ only seen by observer } j\end{cases} \\[8px] \text{each crater info}  \begin{cases} \text{#repeats}\\[5px] \text{crater size} \end{cases} \begin{cases} \text{each in }N_0 \begin{cases}\text{real, all observers missed}\\[2px] \text{OB: missing prob}\\[2px] \text{CC: diameter dsn}\end{cases}\\[5px] \text{each in }N_{2+} \begin{cases}\text{real, 2+ observers saw it}\\[2px] \text{OB}\begin{cases}\text{missing prob}\\[2px] \text{#repeats}\end{cases}\\[3px] \text{CC: diameter dsn}\end{cases}\\[5px] \text{each in }S_j \begin{cases} \text{real crater} \begin{cases}\text{1 observer saw it}\\[2px] \text{OB: missing prob}\\[2px] \text{CC: diameter dsn}\end{cases}\\[5px] \text{errant crater} \begin{cases}\text{OB: errant creation pattern}\\[2px] \text{CC: errant diameter dsn}\end{cases}\end{cases}\end{cases}\end{cases}$$
+]
+]
+
+
+
+---
+
+#  Model
+**Data model** 
+
+Homogeneous Poisson Process (HPP)<sup>[1]</sup>
+
+- $\#$ real craters $N$ $$N \sim \text{Poisson}(\color{red}\rho) \\ N_0+N_{2+}+\sum N_j \sim \text{Poisson}(q^0\color{red}\rho+q^{2+}\color{red}\rho+\sum q^j\color{red}\rho)$$
+$\rho$ : average real crater number;  
+$N_x/q^x$ : total number/probability of real craters that are seen by $x$ observer
+
+
+--
+- $\#$errant observations (created by observer $j$) $=F_j$ $$F_j \sim \text{Poisson}(\rho_j)$$
+$\rho_j$ : average errant crater number created by observer $j$
+
+
+--
+**Prior** : a product of independent univariate distributions 
+
+.footnote[
+[1] more calculation and model details refer to [CraterCounting Writeup](https://github.com/Xiangmei21/Crater-Counting/blob/master/CCcomposition_Xiangmei_Zhang.pdf)
+]
+
+---
+
+# Bayesian analysis
+
+### Implementation
+Platform
+- **Rstan**
+
+MCMC sampling
+- 4 Markov chains each with 2000 iterations
+- First 1000 in each chain as burn-in, 4000 draws in total
+
+---
+background-image: url(Picture4.png)
+background-size: 850px
+background-position: 15% 80%
+
+# Bayesian analysis
+
+### Method validation
+
+Data simulation
+- Ground truth: average real crater number $\color{red}{\rho = 2000}$
+- 16356 observations, 2474 unique craters after pretreatment
+
+Simulated data analysis
+- Posterior estimate of $\color{red}{\hat\rho \simeq 1999}$
+
+---
+background-image: url(Picture5.png)
+background-size: 850px
+background-position: 15% 85%
+
+# Byesian analysis
+
+### Real data analysis
+NAC data
+- 15386 observations with 'NAC (Narrow-Angle Camera)' image type
+- 32504 unique craters after pretreatment
+
+Posterior statistics of average real crater number
+- Posterior estimate = .red[2177]
+- The 95% credible interval is .red[(2076, 2299)] 
+
+
+
+---
+
+class: center, middle
+
+# .large[Thanks!]
+
+.upspace[
+Data and codes are available at [github/Xiangmei21/Crater-Counting](https://github.com/Xiangmei21/Crater-Counting)
+]
