@@ -154,9 +154,9 @@ leaflet() %>%
 
 OB: observer behavior;  CC: crater characteristic
 .toleft[
-.small[
-$$\text{data} \xrightarrow{\text{pretreatment}}\begin{cases}   \text{summary number}   \begin{cases}  N_0\text{ missed by all observers}\\[2px]N_{2+}\text{ seen by 2+ observers}\\[2px] S_j=N_j(\text{real})+F_j(\text{errant}) \text{ only seen by observer } j\end{cases} \\[8px] \text{each crater info}  \begin{cases} \text{#repeats}\\[5px] \text{crater size} \end{cases} \begin{cases} \text{each in }N_0 \begin{cases}\text{real, all observers missed}\\[2px] \text{OB: missing prob}\\[2px] \text{CC: diameter dsn}\end{cases}\\[5px] \text{each in }N_{2+} \begin{cases}\text{real, 2+ observers saw it}\\[2px] \text{OB}\begin{cases}\text{missing prob}\\[2px] \text{#repeats}\end{cases}\\[3px] \text{CC: diameter dsn}\end{cases}\\[5px] \text{each in }S_j \begin{cases} \text{real crater} \begin{cases}\text{1 observer saw it}\\[2px] \text{OB: missing prob}\\[2px] \text{CC: diameter dsn}\end{cases}\\[5px] \text{errant crater} \begin{cases}\text{OB: errant creation pattern}\\[2px] \text{CC: errant diameter dsn}\end{cases}\end{cases}\end{cases}\end{cases}$$
-]
+ .small[
+ $$\text{data} \xrightarrow{\text{pretreat}}\begin{cases}   \text{summary number}   \begin{cases}  N_0\text{ missed by all observers}\\[2px]N_{2+}\text{ seen by 2+ observers}\\[2px] S_j=N_j(\text{real})+F_j(\text{errant}) \text{ only seen by observer } j\end{cases} \\[8px] \text{each crater info}  \begin{cases} \text{#repeats}\\[5px] \text{crater size} \end{cases} \begin{cases} \text{each in }N_0 \begin{cases}\text{real, all observers missed}\\[2px] \text{OB: missing prob}\\[2px] \text{CC: diameter dsn}\end{cases}\\[5px] \text{each in }N_{2+} \begin{cases}\text{real, 2+ observers saw it}\\[2px] \text{OB}\begin{cases}\text{missing prob}\\[2px] \text{#repeats}\end{cases}\\[3px] \text{CC: diameter dsn}\end{cases}\\[5px] \text{each in }S_j \begin{cases} \text{real crater} \begin{cases}\text{1 observer saw it}\\[2px] \text{OB: missing prob}\\[2px] \text{CC: diameter dsn}\end{cases}\\[5px] \text{errant crater} \begin{cases}\text{OB: errant creation pattern}\\[2px] \text{CC: errant diameter dsn}\end{cases}\end{cases}\end{cases}\end{cases}$$
+ ]
 ]
 
 
