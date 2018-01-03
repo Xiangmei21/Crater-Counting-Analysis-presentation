@@ -218,7 +218,7 @@ background-image: url(Picture5.png)
 background-size: 850px
 background-position: 15% 85%
 
-# Byesian analysis
+# Bayesian analysis
 
 ### Real data analysis
 NAC data
@@ -236,7 +236,7 @@ Posterior statistics of average real crater number
 class: center, middle
 
 # .large[Thanks!]
-
+# .large[Questions?]
 .upspace[
 Data and codes are available at [github/Xiangmei21/Crater-Counting](https://github.com/Xiangmei21/Crater-Counting)
 ]
